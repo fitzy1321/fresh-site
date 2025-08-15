@@ -1,25 +1,64 @@
-import { useSignal } from "@preact/signals";
-import Counter from "../islands/Counter.tsx";
+import { Handlers, PageProps } from "$fresh/server.ts";
+import { getPosts, Post } from "../utils/posts.ts";
+import { Container } from "../components/Container.tsx";
+import { HomeHeader } from "../components/HomeHeader.tsx";
+import { Layout } from "../components/Layout.tsx";
+import { settings } from "../utils/constants.ts";
 
-export default function Home() {
-  const count = useSignal(3);
+interface Data {
+  posts: Post[];
+}
+
+export const handler: Handlers<Data> = {
+  async GET(_req, ctx) {
+    const posts = await getPosts();
+    return ctx.render({ posts });
+  },
+};
+
+export default function Home(props: PageProps<Data>) {
+  const { posts } = props.data;
   return (
-    <div class="px-4 py-8 mx-auto bg-[#86efac]">
-      <div class="max-w-screen-md mx-auto flex flex-col items-center justify-center">
-        <img
-          class="my-6"
-          src="/logo.svg"
-          width="128"
-          height="128"
-          alt="the Fresh logo: a sliced lemon dripping with juice"
-        />
-        <h1 class="text-4xl font-bold">Welcome to Fresh</h1>
-        <p class="my-4">
-          Try updating this message in the
-          <code class="mx-2">./routes/index.tsx</code> file, and refresh.
-        </p>
-        <Counter count={count} />
-      </div>
-    </div>
+    <Layout
+      copyrightName={settings.copyrightName}
+      description={settings.description}
+      githubProjectUrl={settings.githubProjectUrl}
+      ogImage={settings.ogImage}
+      title={settings.title}
+    >
+      <HomeHeader
+        title={settings.title}
+        githubProfileUrl={settings.githubProfileUrl}
+        linkedinUrl={settings.linkedinUrl}
+      />
+      <main>
+        <Container>
+          <ul>
+            {posts.map((post) => (
+              <li class="border-t">
+                <a
+                  href={`/blog/${post.slug}`}
+                  class="py-12 pl-5 group grid sm:grid-cols-3"
+                  rel="noopener noreferrer"
+                >
+                  <time class="">
+                    {new Date(post.publishedAt).toLocaleDateString("en-us", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </time>
+                  <div class="sm:col-span-2">
+                    <h2 class="text-2xl font-bold group-hover:underline text-gray-100">
+                      {post.title}
+                    </h2>
+                  </div>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </Container>
+      </main>
+    </Layout>
   );
 }
